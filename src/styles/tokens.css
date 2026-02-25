@@ -1,0 +1,97 @@
+:root {
+  /* Colors - Background */
+  --color-bg-primary: #0A0A0A;
+  --color-bg-surface: #1A1A1A;
+  --color-bg-elevated: #242424;
+
+  /* Colors - Accent */
+  --color-accent-primary: #DB8686;
+  --color-accent-hover: #C97676;
+  --color-accent-active: #B76666;
+  --color-accent-disabled: rgba(219, 134, 134, 0.31); /* #DB868650 */
+
+  /* Colors - Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0A0A0;
+  --color-text-onLight: #2A2A2A;
+  --color-text-placeholder: #6A6A6A;
+
+  /* Colors - Border */
+  --color-border-default: #3A3A3A;
+  --color-border-divider: #2A2A2A;
+  --color-border-focus: #DB8686;
+
+  /* Colors - Other */
+  --color-overlay: rgba(0, 0, 0, 0.5); /* #00000080 */
+  --color-status-success: #4ADE80;
+  --color-status-warning: #FBBF24;
+  --color-status-error: #EF4444;
+
+  /* Habit Colors */
+  --color-habit-meditation: #C9B5E6;
+  --color-habit-work: #8686A8;
+  --color-habit-workout: #E69A9A;
+  --color-habit-journal: #E6D5C9;
+  --color-habit-noFap: #B5C9B5;
+  --color-habit-sleep: #9AC4D4;
+  --color-habit-reading: #E6D89A;
+  --color-habit-hydration: #9AB5D4;
+
+  /* Typography */
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'IBM Plex Mono', monospace;
+  
+  --font-weight-heading: 600;
+  --font-weight-regular: 400;
+
+  --font-size-h1: 32px;
+  --font-size-h2: 24px;
+  --font-size-h3: 20px;
+  --font-size-body: 16px;
+  --font-size-body-small: 14px;
+  --font-size-caption: 12px;
+
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+
+  /* Border Radius */
+  --radius-card: 16px;
+  --radius-button-lg: 12px;
+  --radius-button-sm: 8px;
+  --radius-input: 8px;
+  --radius-fab: 50%;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-button: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-fab: 0px 6px 16px rgba(0, 0, 0, 0.2);
+  --shadow-modal: 0px 8px 24px rgba(0, 0, 0, 0.25);
+
+  /* Animation */
+  --anim-duration-fast: 150ms;
+  --anim-duration-normal: 250ms;
+  --anim-duration-slow: 500ms;
+  --anim-easing-default: ease-in-out;
+  --anim-easing-enter: ease-out;
+  --anim-easing-exit: ease-in;
+}
+
+  /* Darker Habit Colors for Progress Bars */
+  --color-habit-meditation-dark: #A89BC7;
+  --color-habit-work-dark: #6A6A8A;
+  --color-habit-workout-dark: #C77E7E;
+  --color-habit-journal-dark: #C7B6A9;
+  --color-habit-noFap-dark: #95A995;
+  --color-habit-sleep-dark: #7AA4B5;
+  --color-habit-reading-dark: #C7B97E;
+  --color-habit-hydration-dark: #7A96B5;
