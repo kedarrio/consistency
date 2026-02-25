@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 
 export const useNotifications = () => {
@@ -22,21 +22,33 @@ export const useNotifications = () => {
     return false;
   };
 
-  const sendNotification = (title, options = {}) => {
-    if (settings.notifications.global && Notification.permission === 'granted') {
-      const notification = new Notification(title, {
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-192x192.png',
-        ...options
-      });
-
-      if (settings.notifications.sounds) {
-        // Play subtle sound if enabled
-      }
-
-      return notification;
+  const sendNotification = useCallback(async (title, options = {}) => {
+    if (!settings.notifications.global || Notification.permission !== 'granted') {
+      return;
     }
-  };
+
+    const defaultOptions = {
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      vibrate: settings.notifications.sounds ? [200, 100, 200] : [],
+      ...options
+    };
+
+    // Use Service Worker if available for better PWA support
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      if (registration) {
+        registration.showNotification(title, defaultOptions);
+        return;
+      }
+    }
+
+    // Fallback to standard Notification API
+    new Notification(title, defaultOptions);
+  }, [settings.notifications.global, settings.notifications.sounds]);
+
+  // Basic scheduling logic could be implemented here or in a separate effect
+  // For now, we provide the mechanism to send notifications
 
   return { requestPermission, sendNotification };
 };

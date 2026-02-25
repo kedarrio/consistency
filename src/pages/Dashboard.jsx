@@ -1,143 +1,166 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../context/AppContext';
 import HabitCard from '../components/cards/HabitCard';
 import CircularProgress from '../components/progress/CircularProgress';
-import { calculateHabitConsistency, calculateOverallConsistency } from '../utils/calculations';
-import { format } from 'date-fns';
+import Button from '../components/buttons/Button';
+import SettingsIcon from '@mui/icons-material/Settings';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { useCelebration } from '../hooks/useCelebration';
+import { HabitCardSkeleton } from '../components/progress/Skeleton';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, habits, activeSessions, startSession, stopSession, addEntry, settings } = useApp();
+  const { user, habits, settings, setSettings, getOverallConsistency } = useApp();
+  const { triggerConfetti } = useCelebration();
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [orderedHabits, setOrderedHabits] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeHabits = habits.filter(h => h.active);
-  const overallScore = calculateOverallConsistency(activeHabits, 'weekly');
+  // Simulated loading state for skeleton demonstration
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleAction = (habitId, actionType) => {
-    const habit = habits.find(h => h.id === habitId);
-    if (!habit) return;
-
-    switch (actionType) {
-      case 'toggle':
-        if (activeSessions[habitId]) {
-          stopSession(habitId);
-        } else {
-          startSession(habitId);
-        }
-        break;
-      case 'increment':
-        addEntry(habitId, {
-          id: crypto.randomUUID(),
-          date: format(new Date(), 'yyyy-MM-dd'),
-          count: (habit.entries.find(e => e.date === format(new Date(), 'yyyy-MM-dd'))?.count || 0) + 1,
-          timestamp: Date.now()
-        });
-        break;
-      case 'decrement':
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const currentCount = habit.entries.find(e => e.date === today)?.count || 0;
-        if (currentCount > 0) {
-          addEntry(habitId, {
-            id: crypto.randomUUID(),
-            date: today,
-            count: currentCount - 1,
-            timestamp: Date.now()
-          });
-        }
-        break;
-      case 'reset':
-        navigate(`/habit/${habitId}`);
-        break;
-      case 'edit':
-        navigate(`/habit/${habitId}`);
-        break;
-      default:
-        break;
+  // Initialize ordered habits based on settings or default habits
+  useEffect(() => {
+    const activeHabits = habits.filter(h => h.active);
+    if (settings.cardOrder && settings.cardOrder.length > 0) {
+      const sorted = [...activeHabits].sort((a, b) => {
+        const indexA = settings.cardOrder.indexOf(a.id);
+        const indexB = settings.cardOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+      setOrderedHabits(sorted);
+    } else {
+      setOrderedHabits(activeHabits);
     }
+  }, [habits, settings.cardOrder]);
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(orderedHabits);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setOrderedHabits(items);
+    
+    const newOrder = items.map(h => h.id);
+    setSettings({ ...settings, cardOrder: newOrder });
+  };
+
+  const handleGoalReached = () => {
+    triggerConfetti();
   };
 
   return (
-    <div className="px-6 py-6 space-y-8 pb-24">
-      {/* Header */}
-      <section>
-        <h2 className="text-text-secondary font-body text-sm uppercase tracking-wider">
-          {format(new Date(), 'eeee, MMMM d')}
-        </h2>
-        <h1 className="text-[32px] font-heading font-semibold mt-1">
-          Welcome back, {user?.name || 'User'}
-        </h1>
-      </section>
+    <div className="flex flex-col min-h-screen bg-bg-primary text-text-primary px-4 py-6 space-y-6 pb-24">
+      <header className="flex justify-between items-center pt-2">
+        <div className="space-y-1">
+          <h1 className="text-h2 font-heading font-semibold">
+            {user?.name ? `Welcome back, ${user.name}` : 'Consistency'}
+          </h1>
+          <p className="text-text-secondary font-body text-sm">
+            {user?.promise || "One day at a time"}
+          </p>
+        </div>
+      </header>
 
-      {/* Overall Consistency Score (Optional in Settings) */}
-      {settings.display.showConsistencyScoreOnDashboard && (
-        <section className="bg-bg-surface rounded-card p-6 flex items-center justify-between shadow-card border border-border-divider">
-          <div>
-            <h3 className="text-h3 font-heading font-semibold">Overall Score</h3>
-            <p className="text-text-secondary text-sm font-body mt-1">Consistency this week</p>
+      {settings.display?.showConsistencyScoreOnDashboard && (
+        <section className="bg-bg-surface p-6 rounded-card border border-border-default flex items-center justify-between shadow-card">
+          <div className="space-y-1">
+            <h2 className="text-h3 font-heading font-semibold">Overall Consistency</h2>
+            <p className="text-text-secondary text-xs font-body uppercase tracking-wider">This Week</p>
           </div>
-          <CircularProgress progress={overallScore} size={80} strokeWidth={8}>
-            <span className="text-xl font-heading font-semibold text-accent-primary">
-              {overallScore}%
-            </span>
-          </CircularProgress>
+          <div className="relative">
+            <CircularProgress 
+              progress={getOverallConsistency()} 
+              size={64} 
+              strokeWidth={6} 
+              color="var(--color-accent-primary)"
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-sm font-heading font-bold text-accent-primary">
+              {getOverallConsistency()}%
+            </div>
+          </div>
         </section>
       )}
 
-      {/* Habit Cards */}
       <section className="space-y-4">
-        <h3 className="text-caption text-text-secondary uppercase tracking-wider font-body">My Habits</h3>
-        <div className="flex flex-col">
-          {activeHabits.map((habit) => {
-            const isActive = !!activeSessions[habit.id];
-            const todayStr = format(new Date(), 'yyyy-MM-dd');
-            let todayCountDisplay = "0";
-            let progress = 0;
-
-            if (habit.type === 'session') {
-              const minutes = habit.entries
-                .filter(e => e.date === todayStr)
-                .reduce((acc, e) => acc + (e.duration || 0), 0);
-              const dailyGoal = habit.goal.target / 7;
-              todayCountDisplay = `${minutes}/${Math.round(dailyGoal)}m`;
-              progress = Math.min(100, (minutes / dailyGoal) * 100);
-            } else if (habit.type === 'incremental') {
-              const count = habit.entries.find(e => e.date === todayStr)?.count || 0;
-              todayCountDisplay = `${count}/${habit.goal.target}`;
-              progress = Math.min(100, (count / habit.goal.target) * 100);
-            } else if (habit.type === 'streak') {
-              todayCountDisplay = `${habit.currentStreak} days 🔥`;
-              progress = 0;
-            } else if (habit.type === 'manual') {
-              const hasEntry = habit.entries.some(e => e.date === todayStr);
-              todayCountDisplay = hasEntry ? "Done" : "Pending";
-              progress = hasEntry ? 100 : 0;
-            }
-
-            const consistency = habit.type === 'streak' ? '—' : `${calculateHabitConsistency(habit, 'weekly')}%`;
-
-            return (
-              <HabitCard
-                key={habit.id}
-                habit={{
-                  ...habit,
-                  consistency,
-                  todayCount: todayCountDisplay,
-                  progress
-                }}
-                isActive={isActive}
-                onAction={(action) => handleAction(habit.id, action)}
-                onClick={() => navigate(`/habit/${habit.id}`)}
-              />
-            );
-          })}
-
-          {activeHabits.length === 0 && (
-            <div className="py-12 text-center space-y-4">
-              <p className="text-text-secondary italic">No habits selected.</p>
-              <Button variant="secondary" onClick={() => navigate('/settings')}>Go to Settings</Button>
-            </div>
-          )}
+        <div className="flex justify-between items-center">
+          <h2 className="text-h3 font-heading font-semibold">Your Habits</h2>
+          <Button 
+            variant="icon" 
+            onClick={() => setIsReorderMode(!isReorderMode)}
+            className={isReorderMode ? 'text-accent-primary' : 'text-text-secondary'}
+          >
+            {isReorderMode ? 'Done' : <SettingsIcon />}
+          </Button>
         </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            <HabitCardSkeleton />
+            <HabitCardSkeleton />
+            <HabitCardSkeleton />
+          </div>
+        ) : orderedHabits.length === 0 ? (
+          <div className="text-center py-12 space-y-4">
+            <p className="text-text-secondary font-body">No habits selected yet.</p>
+            <Button variant="primary" onClick={() => navigate('/settings')}>
+              Go to Settings
+            </Button>
+          </div>
+        ) : isReorderMode ? (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="habits">
+              {(provided) => (
+                <div 
+                  {...provided.droppableProps} 
+                  ref={provided.innerRef}
+                  className="space-y-3"
+                >
+                  {orderedHabits.map((habit, index) => (
+                    <Draggable key={habit.id} draggableId={habit.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`flex items-center gap-3 p-4 bg-bg-surface rounded-card border transition-all duration-200 ${
+                            snapshot.isDragging 
+                              ? 'border-accent-primary shadow-modal scale-[1.05] z-[100]' 
+                              : 'border-border-default'
+                          }`}
+                        >
+                          <DragIndicatorIcon className="text-text-secondary" />
+                          <span className="font-heading text-lg flex-1">{habit.name}</span>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {orderedHabits.map(habit => (
+              <HabitCard 
+                key={habit.id} 
+                habit={habit} 
+                onGoalReached={handleGoalReached}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

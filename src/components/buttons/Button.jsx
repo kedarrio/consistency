@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useLayoutEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Button = ({ 
   children, 
@@ -11,7 +11,9 @@ const Button = ({
   type = 'button',
   icon: Icon
 }) => {
-  const baseStyles = "relative flex items-center justify-center font-body transition-all duration-200 focus:outline-none disabled:cursor-not-allowed";
+  const [ripples, setRipples] = useState([]);
+
+  const baseStyles = "relative flex items-center justify-center font-body transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed overflow-hidden";
   
   const variants = {
     primary: "bg-accent-primary text-white py-4 px-6 rounded-buttonLg shadow-button min-h-[56px] hover:bg-accent-hover disabled:bg-accent-disabled",
@@ -24,22 +26,68 @@ const Button = ({
 
   const currentVariant = variants[variant] || variants.primary;
 
+  const createRipple = (event) => {
+    if (disabled || loading) return;
+
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
+
+    const newRipple = {
+      id: Date.now(),
+      x,
+      y,
+      size
+    };
+
+    setRipples((prev) => [...prev, newRipple]);
+    
+    // Cleanup ripple after animation
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
+    }, 600);
+  };
+
   return (
     <motion.button
       whileTap={!disabled && !loading ? { scale: 0.95 } : {}}
       type={type}
+      onMouseDown={createRipple}
       onClick={onClick}
       disabled={disabled || loading}
       className={`${baseStyles} ${currentVariant} ${className}`}
     >
-      {loading ? (
-        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-      ) : (
-        <>
-          {Icon && <Icon className={`${children ? 'mr-2' : ''} !text-[24px]`} />}
-          {children}
-        </>
-      )}
+      <AnimatePresence>
+        {ripples.map((ripple) => (
+          <motion.span
+            key={ripple.id}
+            initial={{ scale: 0, opacity: 0.35 }}
+            animate={{ scale: 4, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="absolute bg-white rounded-full pointer-events-none"
+            style={{
+              width: ripple.size,
+              height: ripple.size,
+              top: ripple.y,
+              left: ripple.x,
+            }}
+          />
+        ))}
+      </AnimatePresence>
+      
+      <div className="relative z-10 flex items-center justify-center">
+        {loading ? (
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <>
+            {Icon && <Icon className={`${children ? 'mr-2' : ''} !text-[24px]`} />}
+            {children}
+          </>
+        )}
+      </div>
     </motion.button>
   );
 };

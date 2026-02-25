@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 import TopNav from '../components/navigation/TopNav';
 import Button from '../components/buttons/Button';
@@ -188,9 +189,14 @@ const HabitDetail = () => {
           ) : habit.type === 'incremental' ? (
             <div className="flex flex-col items-center space-y-6 w-full">
               <div className="text-center">
-                <div className="text-[48px] font-heading font-semibold">
+                <motion.div 
+                  key={habit.entries.find(e => e.date === format(new Date(), 'yyyy-MM-dd'))?.count || 0}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-[48px] font-heading font-semibold"
+                >
                   {habit.entries.find(e => e.date === format(new Date(), 'yyyy-MM-dd'))?.count || 0} / {habit.goal.target}
-                </div>
+                </motion.div>
                 <div className="text-lg text-text-secondary font-body uppercase tracking-wider">{habit.goal.unit}</div>
               </div>
               <div className="flex gap-6 w-full max-w-[240px]">
@@ -206,9 +212,13 @@ const HabitDetail = () => {
           ) : habit.type === 'streak' ? (
             <div className="flex flex-col items-center space-y-8 w-full">
               <div className="text-center">
-                <div className="text-[48px] font-heading font-semibold text-accent-primary">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-[48px] font-heading font-semibold text-accent-primary"
+                >
                   {habit.currentStreak} days 🔥
-                </div>
+                </motion.div>
                 <div className="text-lg text-text-secondary font-body">Best: {habit.longestStreak} days</div>
               </div>
               <Button variant="secondary" onClick={handleAction} className="w-full" icon={HeartBrokenIcon}>
@@ -356,10 +366,14 @@ const HabitDetail = () => {
         title="Reset your streak?"
       >
         <div className="space-y-6">
-          <div className="text-center space-y-1">
+          <motion.div 
+            animate={{ x: [-5, 5, -3, 3, 0] }}
+            transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 3 }}
+            className="text-center space-y-1"
+          >
             <div className="text-h2 font-heading font-semibold text-accent-primary">Current: {habit.currentStreak} days</div>
             <div className="text-sm text-text-secondary font-body italic">How are you feeling? What led to this?</div>
-          </div>
+          </motion.div>
           <TextArea 
             placeholder="Write something..." 
             value={resetNotes}
